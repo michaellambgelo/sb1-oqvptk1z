@@ -76,7 +76,6 @@ function App() {
           target={100}
           type="followers"
           title="Follower Goal"
-          position="bottom"
         />
       )}
     </div>
