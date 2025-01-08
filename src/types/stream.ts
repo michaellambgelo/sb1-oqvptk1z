@@ -2,6 +2,7 @@ export interface StreamStats {
   followers: number;
   viewers: number;
   subscribers: number;
+  startedAt?: string; // ISO timestamp of when the stream started
 }
 
 export interface ChatMessage {
@@ -9,6 +10,7 @@ export interface ChatMessage {
   username: string;
   message: string;
   isHighlighted?: boolean;
+  timestamp: string;
 }
 
 export interface StreamInfo {
