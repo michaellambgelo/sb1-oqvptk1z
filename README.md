@@ -11,6 +11,10 @@ A modern web application starter template using Vite, React, and TypeScript. Thi
 - ⚛️ React for component-based UI
 - 🎨 Tailwind CSS for styling
 - 🧰 ESLint for code quality
+- 💬 Twitch Chat Integration
+- ⏱️ Stream Uptime Display
+- 📊 Follower Goal Tracking
+- 📹 Camera Frame Overlay
 
 ## Prerequisites
 - Node.js (v18 or later)
@@ -57,6 +61,21 @@ For deployment:
    - Go to Repository Settings → Secrets and Variables → Actions
    - Add each variable as a new secret
    - The GitHub Actions workflow will automatically use these secrets during deployment
+
+## URL Parameters
+
+The overlay can be customized using URL parameters:
+
+- `camera=true/false` - Show/hide camera frame (default: true)
+- `chat=true/false` - Show/hide chat overlay (default: true)
+- `goal=true/false` - Show/hide follower goal (default: true)
+- `timer=true/false` - Show/hide stream timer (default: true)
+- `timerStart=ISO_STRING` - Set custom start time for timer (optional)
+
+Example:
+```
+?camera=true&chat=true&goal=true&timer=true
+```
 
 ## License
 This project is licensed under the [MIT License](LICENSE).

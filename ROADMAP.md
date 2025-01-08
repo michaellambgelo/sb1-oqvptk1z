@@ -21,7 +21,7 @@ This document outlines the planned development roadmap for the Twitch overlay ap
 - Recent events display (followers, subscribers, donations)
 - Alert animations for new events
 - Custom overlay themes
-- Stream uptime display
+- ✓ Stream uptime display
 
 ## 4. Interactive Features
 - Viewer interaction widgets
