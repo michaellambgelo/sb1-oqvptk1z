@@ -1,16 +1,35 @@
 import { Client } from 'tmi.js';
 import { EventEmitter } from '../utils/EventEmitter';
-import type { ChatMessage, StreamStats } from '../types/stream';
+import type { ChatMessage, StreamStats, StreamInfo } from '../types/stream';
+
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 1000;
 
 class TwitchService extends EventEmitter {
-  private client: Client;
+  private client: Client | null = null;
   private channelName: string = '';
   private clientId: string = '';
   private accessToken: string = '';
   private broadcasterId: string = '';
+  private pollIntervals: NodeJS.Timeout[] = [];
+  private emoteCache: Map<string, string> = new Map();
 
   constructor() {
     super();
+  }
+
+  private async retry<T>(
+    operation: () => Promise<T>,
+    attempts: number = RETRY_ATTEMPTS,
+    delay: number = RETRY_DELAY
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempts <= 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return this.retry(operation, attempts - 1, delay * 2);
+    }
   }
 
   async connect(channel: string, clientId: string, accessToken: string) {
@@ -18,27 +37,27 @@ class TwitchService extends EventEmitter {
     this.clientId = clientId;
     this.accessToken = accessToken;
 
-    // Get broadcaster ID first
-    await this.getBroadcasterId();
-
-    // Initialize TMI client
-    this.client = new Client({
-      options: { debug: true },
-      identity: {
-        username: this.channelName,
-        password: `oauth:${this.accessToken}`
-      },
-      channels: [this.channelName]
-    });
-
-    // Connect to Twitch
     try {
+      // Get broadcaster ID first
+      await this.retry(() => this.getBroadcasterId());
+
+      // Initialize TMI client
+      this.client = new Client({
+        options: { debug: false }, // Set to false to reduce console noise
+        identity: {
+          username: this.channelName,
+          password: `oauth:${this.accessToken}`
+        },
+        channels: [this.channelName]
+      });
+
+      // Connect to Twitch
       await this.client.connect();
       console.log('Connected to Twitch chat');
 
       // Set up chat message handler
-      this.client.on('message', (channel, tags, message, self) => {
-        if (self) return; // Ignore messages from the bot
+      this.client.on('message', async (channel, tags, message, self) => {
+        if (self) return;
 
         const chatMessage: ChatMessage = {
           id: tags.id || String(Date.now()),
@@ -50,10 +69,10 @@ class TwitchService extends EventEmitter {
         this.emit('chat', chatMessage);
       });
 
-      // Start polling for stream stats
-      this.pollStreamStats();
+      // Start polling for stream info and stats
+      this.startPolling();
     } catch (error) {
-      console.error('Failed to connect to Twitch chat:', error);
+      console.error('Failed to connect to Twitch:', error);
       throw error;
     }
   }
@@ -87,44 +106,53 @@ class TwitchService extends EventEmitter {
     }
   }
 
-  private async pollStreamStats() {
-    const pollInterval = 60000; // Poll every minute
+  private async fetchWithAuth(url: string) {
+    const response = await fetch(url, {
+      headers: {
+        'Client-ID': this.clientId,
+        'Authorization': `Bearer ${this.accessToken}`
+      }
+    });
 
-    const updateStats = async () => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  private startPolling() {
+    // Clear any existing intervals
+    this.pollIntervals.forEach(clearInterval);
+    this.pollIntervals = [];
+
+    // Poll stream info
+    const pollStreamInfo = async () => {
       try {
-        // Get channel information
-        const channelResponse = await fetch(
-          `https://api.twitch.tv/helix/channels?broadcaster_id=${this.broadcasterId}`,
-          {
-            headers: {
-              'Client-ID': this.clientId,
-              'Authorization': `Bearer ${this.accessToken}`
-            }
-          }
-        );
+        const [channelData, streamData] = await Promise.all([
+          this.retry(() => this.fetchWithAuth(`https://api.twitch.tv/helix/channels?broadcaster_id=${this.broadcasterId}`)),
+          this.retry(() => this.fetchWithAuth(`https://api.twitch.tv/helix/streams?user_id=${this.broadcasterId}`))
+        ]);
 
-        if (!channelResponse.ok) {
-          throw new Error(`HTTP error! status: ${channelResponse.status}`);
-        }
+        const streamInfo: StreamInfo = {
+          title: channelData.data[0].title,
+          game: channelData.data[0].game_name,
+          isLive: streamData.data.length > 0
+        };
 
-        const channelData = await channelResponse.json();
+        this.emit('streamInfo', streamInfo);
+      } catch (error) {
+        console.error('Failed to fetch stream info:', error);
+      }
+    };
 
-        // Get follower count
-        const followerResponse = await fetch(
-          `https://api.twitch.tv/helix/channels/followers?broadcaster_id=${this.broadcasterId}`,
-          {
-            headers: {
-              'Client-ID': this.clientId,
-              'Authorization': `Bearer ${this.accessToken}`
-            }
-          }
-        );
-
-        if (!followerResponse.ok) {
-          throw new Error(`HTTP error! status: ${followerResponse.status}`);
-        }
-
-        const followerData = await followerResponse.json();
+    // Poll stream stats
+    const pollStreamStats = async () => {
+      try {
+        const [channelData, followerData] = await Promise.all([
+          this.retry(() => this.fetchWithAuth(`https://api.twitch.tv/helix/channels?broadcaster_id=${this.broadcasterId}`)),
+          this.retry(() => this.fetchWithAuth(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${this.broadcasterId}`))
+        ]);
 
         const stats: StreamStats = {
           followers: followerData.total,
@@ -138,14 +166,26 @@ class TwitchService extends EventEmitter {
       }
     };
 
-    // Update immediately and then start polling
-    await updateStats();
-    setInterval(updateStats, pollInterval);
+    // Initial calls
+    pollStreamInfo().catch(console.error);
+    pollStreamStats().catch(console.error);
+
+    // Set up polling intervals
+    this.pollIntervals.push(
+      setInterval(() => pollStreamInfo().catch(console.error), 60000),
+      setInterval(() => pollStreamStats().catch(console.error), 60000)
+    );
   }
 
   disconnect() {
+    // Clear polling intervals
+    this.pollIntervals.forEach(clearInterval);
+    this.pollIntervals = [];
+
+    // Disconnect TMI client
     if (this.client) {
       this.client.disconnect();
+      this.client = null;
     }
   }
 }

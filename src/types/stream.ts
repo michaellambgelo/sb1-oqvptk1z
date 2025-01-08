@@ -8,13 +8,17 @@ export interface ChatMessage {
   id: string;
   username: string;
   message: string;
-  timestamp: Date;
   isHighlighted?: boolean;
-  badges?: string[];
+}
+
+export interface StreamInfo {
+  title: string;
+  game: string;
+  isLive: boolean;
 }
 
 export interface Goal {
-  type: 'followers' | 'subscribers' | 'donations';
+  type: 'followers' | 'subscribers';
   current: number;
   target: number;
   title: string;
