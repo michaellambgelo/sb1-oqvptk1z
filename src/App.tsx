@@ -4,6 +4,7 @@ import { ChatBox } from './components/ChatBox';
 import { StreamLogo } from './components/StreamLogo';
 import { FollowerGoal } from './components/FollowerGoal';
 import { CameraFrame } from './components/CameraFrame';
+import { StreamTimer } from './components/StreamTimer';
 import { twitchService } from './services/twitch';
 import type { ChatMessage, StreamStats } from './types/stream';
 import logoImage from './assets/logo.png';
@@ -14,6 +15,7 @@ function App() {
     followers: 0,
     subscribers: 0,
     viewers: 0,
+    startedAt: undefined,
   });
 
   // Get configuration from URL parameters
@@ -21,6 +23,8 @@ function App() {
   const showCamera = urlParams.get('camera') !== 'false';
   const showChat = urlParams.get('chat') !== 'false';
   const showGoal = urlParams.get('goal') !== 'false';
+  const showTimer = urlParams.get('timer') !== 'false';
+  const timerStartTime = urlParams.get('timerStart') || stats.startedAt;
 
   useEffect(() => {
     const channel = import.meta.env.VITE_TWITCH_CHANNEL;
@@ -62,6 +66,12 @@ function App() {
           messages={messages} 
           position="right"
           cameraVisible={showCamera}
+        />
+      )}
+      {showTimer && (
+        <StreamTimer
+          position={showChat ? 'left' : 'right'}
+          startTime={timerStartTime}
         />
       )}
       {showCamera && (
