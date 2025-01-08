@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { ChatBox } from './components/ChatBox';
 import { StreamLogo } from './components/StreamLogo';
 import { FollowerGoal } from './components/FollowerGoal';
+import { CameraFrame } from './components/CameraFrame';
 import { twitchService } from './services/twitch';
 import type { ChatMessage, StreamStats } from './types/stream';
 import logoImage from './assets/logo.png';
@@ -13,6 +15,12 @@ function App() {
     subscribers: 0,
     viewers: 0,
   });
+
+  // Get configuration from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const showCamera = urlParams.get('camera') !== 'false';
+  const showChat = urlParams.get('chat') !== 'false';
+  const showGoal = urlParams.get('goal') !== 'false';
 
   useEffect(() => {
     const channel = import.meta.env.VITE_TWITCH_CHANNEL;
@@ -47,16 +55,25 @@ function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-transparent pointer-events-none">
-      <StreamLogo imageUrl={logoImage} />
-      <ChatBox messages={messages} />
-      <FollowerGoal
-        current={stats.followers}
-        target={100}
-        type="followers"
-        title="Follower Goal"
-      />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={
+          <div className="h-screen w-screen bg-transparent pointer-events-none select-none">
+            <StreamLogo imageUrl={logoImage} />
+            {showChat && <ChatBox messages={messages} />}
+            {showGoal && (
+              <FollowerGoal
+                current={stats.followers}
+                target={100}
+                type="followers"
+                title="Follower Goal"
+              />
+            )}
+            {showCamera && <CameraFrame position="bottom-left" />}
+          </div>
+        } />
+      </Routes>
+    </Router>
   );
 }
 

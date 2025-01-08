@@ -4,13 +4,16 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // Add this line for GitHub Pages compatibility
+  server: {
+    port: 3000,
+    host: true
+  },
+  base: './',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
-  server: {
-    port: 5173,
-    host: true, // Expose to all network interfaces
-    cors: true
-  }
-});
+})
