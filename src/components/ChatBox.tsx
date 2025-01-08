@@ -6,9 +6,10 @@ interface ChatBoxProps {
   messages: ChatMessage[];
   maxMessages?: number;
   position?: 'left' | 'right';
+  cameraVisible?: boolean;
 }
 
-export function ChatBox({ messages, maxMessages = 10, position = 'right' }: ChatBoxProps) {
+export function ChatBox({ messages, maxMessages = 10, position = 'right', cameraVisible = true }: ChatBoxProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,7 +17,13 @@ export function ChatBox({ messages, maxMessages = 10, position = 'right' }: Chat
   }, [messages]);
 
   return (
-    <div className="bg-gradient-to-b from-blue-900/90 to-blue-800/90 fixed bottom-4 w-80 pointer-events-auto" style={{ [position]: '1rem' }}>
+    <div 
+      className="bg-gradient-to-b from-blue-900/90 to-blue-800/90 fixed w-80 pointer-events-auto" 
+      style={{ 
+        [position]: '1rem',
+        bottom: cameraVisible ? 'calc(16rem + 5rem)' : '5rem' // Position above camera when visible, with some spacing
+      }}
+    >
       <div className="flex items-center gap-2 p-4 border-b border-blue-700/50">
         <MessageSquare className="w-5 h-5 text-blue-300" />
         <h3 className="font-bold text-blue-200">Stream Chat</h3>

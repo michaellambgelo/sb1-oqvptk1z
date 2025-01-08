@@ -55,25 +55,31 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={
-          <div className="h-screen w-screen bg-transparent pointer-events-none select-none">
-            <StreamLogo imageUrl={logoImage} />
-            {showChat && <ChatBox messages={messages} />}
-            {showGoal && (
-              <FollowerGoal
-                current={stats.followers}
-                target={100}
-                type="followers"
-                title="Follower Goal"
-              />
-            )}
-            {showCamera && <CameraFrame position="bottom-left" />}
-          </div>
-        } />
-      </Routes>
-    </Router>
+    <div className="w-screen h-screen bg-transparent text-white">
+      <StreamLogo imageUrl={logoImage} />
+      {showChat && (
+        <ChatBox 
+          messages={messages} 
+          position="right"
+          cameraVisible={showCamera}
+        />
+      )}
+      {showCamera && (
+        <CameraFrame 
+          position="bottom-right"
+          visible={showCamera}
+        />
+      )}
+      {showGoal && (
+        <FollowerGoal 
+          current={stats.followers} 
+          target={100}
+          type="followers"
+          title="Follower Goal"
+          position="bottom"
+        />
+      )}
+    </div>
   );
 }
 
