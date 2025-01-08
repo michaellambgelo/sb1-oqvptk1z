@@ -37,7 +37,7 @@ export function StreamLogo({ imageUrl }: StreamLogoProps) {
           <span className="text-white font-bold text-xl tracking-wider">
             {streamInfo?.isLive ? 'LIVE' : 'OFFLINE'}
           </span>
-          <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse shadow" />
+          <span className={`inline-block w-2 h-2 rounded-full ${streamInfo?.isLive ? 'bg-red-500' : 'bg-gray-500'} animate-pulse shadow`} />
         </div>
         {streamInfo?.title && (
           <span className="text-white text-sm opacity-80 max-w-[300px] truncate">
