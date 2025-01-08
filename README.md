@@ -41,6 +41,23 @@ npm run dev
 
 **Important**: Never commit the `.env` file to version control!
 
+## Environment Variables
+
+This project requires several environment variables to function properly. Create a `.env` file in the root directory with the following variables:
+
+```bash
+VITE_TWITCH_CHANNEL=your_channel_name
+VITE_TWITCH_CLIENT_ID=your_client_id
+VITE_TWITCH_ACCESS_TOKEN=your_access_token
+```
+
+For deployment:
+1. Never commit the `.env` file
+2. Add these variables as repository secrets in GitHub:
+   - Go to Repository Settings → Secrets and Variables → Actions
+   - Add each variable as a new secret
+   - The GitHub Actions workflow will automatically use these secrets during deployment
+
 ## License
 This project is licensed under the [MIT License](LICENSE).
 
