@@ -6,12 +6,26 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    headers: {
+      'Content-Security-Policy': [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "connect-src 'self' wss: https:",
+      ].join('; '),
+    },
   },
-  base: './',
+  base: '/sb1-oqvptk1z/', 
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, 
+      },
+    },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],
